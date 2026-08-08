@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Supplier Entry</title>
+
+<style>
+body{
+    font-family:Arial;
+    max-width:1000px;
+    margin:30px auto;
+    padding:20px;
+}
+
+input,textarea{
+    width:100%;
+    padding:10px;
+    margin:8px 0;
+    font-size:16px;
+    box-sizing:border-box;
+}
+
+button{
+    padding:10px 20px;
+    font-size:16px;
+    cursor:pointer;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+}
+
+table,th,td{
+    border:1px solid #ccc;
+}
+
+th,td{
+    padding:10px;
+    text-align:left;
+}
+
+tr:nth-child(even){
+    background:#f5f5f5;
+}
+
+h2{
+    text-align:center;
+}
+</style>
+
+</head>
+<body>
+
+<h2>Supplier Entry</h2>
+
+<input type="text" id="name" placeholder="Supplier Name">
+
+<input type="text" id="mobile" placeholder="Mobile Number">
+
+<textarea id="address" rows="3" placeholder="Address"></textarea>
+
+<button onclick="saveSupplier()">Save Supplier</button>
+
+<hr>
+<h3>Search Supplier</h3>
+
+<input type="text"
+       id="search"
+       placeholder="Type Supplier Name"
+       oninput="searchSupplier()">
+<table>
+
+<thead>
+<tr>
+<th>Supplier Name</th>
+<th>Mobile</th>
+<th>Address</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="tbody"></tbody>
+
+</table>
+
+<script type="module">
+
+
+
+
+
+
+
+
+
+    
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+
+
+import {
+getFirestore,
+collection,
+addDoc,
+getDocs,
+doc,
+updateDoc,
+deleteDoc
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+
+
+  apiKey: "AIzaSyBOw2CG4-8JWYNl5hf3aR7yCPjcPI41IC0",
+  authDomain: "ommtaxsolutions.firebaseapp.com",
+  projectId: "ommtaxsolutions",
+  storageBucket: "ommtaxsolutions.firebasestorage.app",
+  messagingSenderId: "944702919466",
+  appId: "1:944702919466:web:6f37b36e1d5cf6d7a54453",
+  measurementId: "G-NNTHM5Y4B8"
+
+
+};
+
+const app = initializeApp(firebaseConfig);
+
+
+const db = getFirestore(app);
+
+let editId = null;
+let allData = [];
+
+window.saveSupplier = async function(){
+
+let name = document.getElementById("name").value.trim();
+let mobile = document.getElementById("mobile").value.trim();
+let address = document.getElementById("address").value.trim();
+
+if(name==""){
+    alert("Enter Supplier Name");
+    return;
+}
+
+if(editId){
+
+    await updateDoc(doc(db,"suppliers",editId),{
+
+        name:name,
+        mobile:mobile,
+        address:address
+
+    });
+
+    alert("Supplier Updated");
+
+    editId=null;
+
+}else{
+
+    await addDoc(collection(db,"suppliers"),{
+
+        name:name,
+        mobile:mobile,
+        address:address
+
+    });
+
+    alert("Supplier Saved");
+
+}
+
+document.getElementById("name").value="";
+document.getElementById("mobile").value="";
+document.getElementById("address").value="";
+
+loadData();
+
+}
+
+async function loadData(){
+
+const snapshot = await getDocs(collection(db,"suppliers"));
+
+allData=[];
+
+snapshot.forEach(document=>{
+
+allData.push({
+
+id:document.id,
+...document.data()
+
+});
+
+});
+
+display();
+
+}
+
+function display(data = allData){
+
+let html="";
+
+data.forEach(item=>{
+
+html += `
+<tr>
+<td>${item.name}</td>
+<td>${item.mobile}</td>
+<td>${item.address}</td>
+<td>
+<button onclick="editSupplier('${item.id}')">Edit</button>
+
+<button onclick="deleteSupplier('${item.id}')"
+style="background:red;color:white;margin-left:5px;">
+Delete
+</button>
+</td>
+</tr>
+`;
+
+});
+
+document.getElementById("tbody").innerHTML=html;
+
+}
+
+window.searchSupplier = function(){
+
+    let search = document.getElementById("search").value.toLowerCase();
+
+    let result = allData.filter(item =>
+        item.name.toLowerCase().includes(search)
+    );
+
+    display(result);
+
+}
+
+window.editSupplier=function(id){
+
+let item=allData.find(x=>x.id===id);
+
+document.getElementById("name").value=item.name;
+document.getElementById("mobile").value=item.mobile;
+document.getElementById("address").value=item.address;
+
+editId=id;
+
+}
+
+window.deleteSupplier=async function(id){
+
+if(confirm("Delete this supplier?")){
+
+await deleteDoc(doc(db,"suppliers",id));
+
+alert("Supplier Deleted");
+
+loadData();
+
+}
+
+}
+
+loadData();
+
+</script>
+
+</body>
+</html>
